@@ -5,6 +5,8 @@ Change History
 
 1.4 (unreleased)
 ================
+- Add a workaround to grab content masked by ComputedAttribute & PageTemplate.
+  [kiorky]
 
 - Bug fix to load ZCML for GS when Products.GenericSetup is installed.
   [aclark]

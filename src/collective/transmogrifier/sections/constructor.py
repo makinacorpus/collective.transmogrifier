@@ -1,3 +1,4 @@
+from ComputedAttribute import ComputedAttribute
 from zope.interface import classProvides, implements
 from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.interfaces import ISection
@@ -49,10 +50,43 @@ class ConstructorSection(object):
                 logger.warn(error)
                 yield item; continue
             
-            if getattr(aq_base(context), id, None) is not None: # item exists
+            # in some instance, we have 'index_html' contents
+            # giving us either:
+            #   - computed attribute 
+            #   - page templates
+            # on new container objects when the content 
+            # does not exist yet
+            tobj = getattr(aq_base(context), id, None)
+            if tobj is not None:
+                orepr = repr(tobj).lower()
+                if (('fspagetemplate' in orepr)
+                    or ('computedattribute' in orepr)
+                   ):
+                    try:
+                        tobj = self.context.unrestrictedTraverse(
+                            path.strip('/')).aq_inner
+                    except Exception, e:
+                        tobj = None
+            # also take care to filter out :
+            # - Acquisition grabbed contents
+            if tobj is not None:
+                tpath = '/'.join(context.getPhysicalPath()+(id,))
+                cpath = '/'.join(context.getPhysicalPath())+ '/'
+                if ((not tpath.startswith(cpath))
+                    or ('fspagetemplate' in orepr)
+                    or ('computedattribute' in orepr)
+                   ): 
+                    tobj = None
+
+            if  (tobj is not None 
+                 and not isinstance(tobj, ComputedAttribute)
+                ): # item exists
+
                 yield item; continue
             
+
             obj = fti._constructInstance(context, id)
+
             
             # For CMF <= 2.1 (aka Plone 3)
             if hasattr(fti, '_finishConstruction'):
